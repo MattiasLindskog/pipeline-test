@@ -1,6 +1,11 @@
 try {
     node {
 
+        stage('Get commit') {
+            sh "git rev-parse --short HEAD > .git/commit-id"
+            commit_id = readFile('.git/commit-id')
+            println "Commit id was! " + commit_id
+        }
 
         stage('First test') {
             sh 'env > env.txt'
@@ -43,9 +48,7 @@ try {
             echo "Timeout aborting..."
         }
         node {
-            echo "No timeout - checking input"
-            println "Input was " + userInput
-            if (userInput) {
+            if (userInput['dePloyToProd']) {
                 echo "Deploying to prod..."
                 unstash 'complete-workspace'
                 def jenkinsNodeVersion = tool 'NodeJS 4.3.2'
