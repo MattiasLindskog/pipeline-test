@@ -1,0 +1,28 @@
+{
+  "name": "pipeline-test",
+  "version": "1.0.0",
+  "description": "Test Jenkins pipeline",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "test": "mocha --recursive",
+    "itest": "mocha --recursive itest",
+    "jenkins-test": "XUNIT_FILE=xunit-test.xml mocha --recursive -R xunit-file",
+    "jenkins-itest": "XUNIT_FILE=xunit-itest.xml mocha --recursive itest -R xunit-file"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MattiasLindskog/pipeline-test.git"
+  },
+  "homepage": "https://github.com/MattiasLindskog/pipeline-test#readme",
+  "dependencies": {
+    "querystring": "^0.2.0"
+  },
+  "devDependencies": {
+    "aws-sdk": "2.4.4",
+    "chai": "3.5.0",
+    "chai-string": "1.2.0",
+    "mocha": "3.1.2",
+    "xunit-file": "1.0.0"
+  }
+}
