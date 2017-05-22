@@ -1,5 +1,5 @@
 try {
-    node('node') {
+    node {
 
 
         stage('First test') {
@@ -34,10 +34,19 @@ try {
     }
 
     stage('Trigger deploy to production') {
-        def userInput = input message: 'Deploy to production?', parameters: [booleanParam(defaultValue: false, description: 'Use build to deploy in production', name: 'deployToProd')]
-        if (userInput['dePloyToProd']) {
-
-            node('node') {
+        def userInput
+        try {
+            timeout(time: 3, unit: 'MINUTES') {
+                userInput = input message: 'Deploy to production?', parameters: [booleanParam(defaultValue: false, description: 'Use build to deploy in production', name: 'deployToProd')]
+            }
+        } catch (err) {
+            echo "Timeout aborting..."
+        }
+        node {
+            echo "No timeout - checking input"
+            println "Input was " + userInput
+            if (userInput) {
+                echo "Deploying to prod..."
                 unstash 'complete-workspace'
                 def jenkinsNodeVersion = tool 'NodeJS 4.3.2'
                 withEnv(["PATH+NODE=${jenkinsNodeVersion}/bin", "ENVIRONMENT=${ENVIRONMENT}"]) {
