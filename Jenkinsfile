@@ -48,18 +48,18 @@ try {
     }
 
     if (isProd) {
-        stage('Trigger deploy to production') {
-            def userInput
+        stage('Move STABLE label') {
+            def moveStableLabel = false
             try {
-                timeout(time: 3, unit: 'MINUTES') {
-                    userInput = input message: 'Deploy to production?', parameters: [booleanParam(defaultValue: false, description: 'Use build to deploy in production', name: 'deployToProd')]
+                timeout(time: 2, unit: 'MINUTES') {
+                    moveStableLabel = input message: 'Continue with deployment and move the STABLE label?', parameters: [booleanParam(defaultValue: false, description: 'Description field', name: 'Name field')]
                 }
             } catch (err) {
                 echo "Timeout aborting..."
             }
             node {
-                if (userInput['deployToProd']) {
-                    echo "Deploying to prod..."
+                if (moveStableLabel) {
+                    echo "Moving stable label"
                     def jenkinsNodeVersion = tool 'NodeJS 4.3.2'
                     echo "Setting production label!"
                 }
@@ -73,9 +73,11 @@ catch (err) {
     throw err
 }
 finally {
-    // Always notify mailer
-    step([$class: 'Mailer', notifyEveryUnstableBuild: true, recipients: 'awsjenkins@animaconnected.onmicrosoft.com', sendToIndividuals: false])
+    node{
+        // Always notify mailer
+        step([$class: 'Mailer', notifyEveryUnstableBuild: true, recipients: 'awsjenkins@animaconnected.onmicrosoft.com', sendToIndividuals: false])
 
-    // Publish test results
-    step([$class: 'JUnitResultArchiver', testResults: '**/xunit*.xml'])
+        // Publish test results
+        step([$class: 'JUnitResultArchiver', testResults: '**/xunit*.xml'])
+     }
 }
