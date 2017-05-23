@@ -33,14 +33,14 @@ try {
     }
 
     if (isProd) {
-        stage('Move STABLE label') {
+        stage('Update STABLE alias') {
             def moveStableLabel = false
             try {
                 timeout(time: 2, unit: 'MINUTES') {
                     moveStableLabel = input message: 'Confirm deployment', parameters: [booleanParam(defaultValue: false, description: 'To complete deployment the STABLE alias needs to be moved.', name: 'Move the STABLE alias')]
                 }
             } catch (err) {
-                println "Marking current build as failed due to timeout when waiting for confirmation to move STABLE label"
+                println "Marking build as failed due to timeout when waiting for confirmation to move STABLE alias"
                 throw err
             }
             node {
@@ -48,6 +48,10 @@ try {
                     echo "Moving stable label"
                     def jenkinsNodeVersion = tool 'NodeJS 4.3.2'
                     echo "Setting production label!"
+                }
+                else {
+                    println "Marking build as failed due to not moving STABLE alias"
+                    currentBuild.result = 'FAILURE'
                 }
             }
         }
