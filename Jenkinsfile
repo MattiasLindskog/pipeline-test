@@ -1,10 +1,23 @@
-try {
-    node {
+pipeline {
+    options {
+        disableConcurrentBuilds()
+    }
+    def jenkinsShared;
 
+    def isProd = params.ENVIRONMENT == 'prod';
+
+    node {
         stage('Get commit') {
             sh "git rev-parse --short HEAD > .git/commit-id"
             commit_id = readFile('.git/commit-id')
-            println "Commit id was! " + commit_id
+        }
+
+        stage('Load shared library') {
+            def rootDir = pwd()
+            jenkinsShared = load "${rootDir}/scripts/JenkinsShared.Groovy "
+
+            println 'Example method gave: ' + jenkinsShared.exampleMethod()
+
         }
 
         stage('First test') {
@@ -15,16 +28,16 @@ try {
         }
 
         stage('Checkout') {
-            checkout scm: [
-                    $class           : 'GitSCM',
-                    branches         : [[name: '*/master']],
-                    userRemoteConfigs: [[url: 'https://github.com/MattiasLindskog/pipeline-test']],
-                    extensions       : [
-                            [$class: 'CleanBeforeCheckout']
-                    ]
-            ]
+            checkout scm
         }
-        stage('Build and deploy to sandbox') {
+        stage('Build and deploy') {
+            if(isProd) {
+                println "Deploying to production!"
+            }
+            else {
+                println "Deploying to sandbox"
+            }
+
             def jenkinsNodeVersion = tool 'NodeJS 4.3.2'
             withEnv(["PATH+NODE=${jenkinsNodeVersion}/bin", "ENVIRONMENT=${ENVIRONMENT}"]) {
 
@@ -48,6 +61,8 @@ try {
             echo "Timeout aborting..."
         }
         node {
+            prinln "Jenkins shared result in prod" + jenkinsShared.exampleMethod()
+
             if (userInput['dePloyToProd']) {
                 echo "Deploying to prod..."
                 unstash 'complete-workspace'
@@ -57,19 +72,19 @@ try {
                     // Execute build script
                     sh './scripts/build-and-deploy.sh prod'
                 }
+                currentBuild.result = ''
             }
         }
     }
-}
-catch (err) {
-    // Set build result so that it is picked up by mailer
-    currentBuild.result = 'FAILURE'
-    throw err
-}
-finally {
-    // Always notify mailer
-    step([$class: 'Mailer', notifyEveryUnstableBuild: true, recipients: 'awsjenkins@animaconnected.onmicrosoft.com', sendToIndividuals: false])
 
-    // Publish test results
-    step([$class: 'JUnitResultArchiver', testResults: '**/xunit*.xml'])
+    post {
+        changed {
+            // Always notify mailer
+            step([$class: 'Mailer', notifyEveryUnstableBuild: true, recipients: 'awsjenkins@animaconnected.onmicrosoft.com', sendToIndividuals: false])
+        }
+        always {
+            // Publish test results
+            step([$class: 'JUnitResultArchiver', testResults: '**/xunit*.xml'])
+        }
+    }
 }
