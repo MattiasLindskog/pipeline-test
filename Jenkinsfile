@@ -2,11 +2,13 @@ pipeline {
     options {
         disableConcurrentBuilds()
     }
-    def jenkinsShared;
 
-    def isProd = params.ENVIRONMENT == 'prod';
 
     node {
+        def jenkinsShared;
+        def isProd = params.ENVIRONMENT == 'prod';
+
+
         stage('Get commit') {
             sh "git rev-parse --short HEAD > .git/commit-id"
             commit_id = readFile('.git/commit-id')
